@@ -135,6 +135,7 @@
     const playBtn = document.getElementById('play');
     const canvas = document.getElementById('canvas');
     const frames = [];
+    const clientId = '88d539176ffc544';
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       .then(stream => {
@@ -160,10 +161,39 @@
       console.log("Frame captured:", frameData);
     });
 
+    function imgurUpload(uploadImage) {
+        $imgurUpload.show();
+        $group.hide();
+
+        var auth;
+        auth = 'Client-ID ' + clientId;
+
+            $.ajax({
+            url: 'https://api.imgur.com/3/image',
+            type: 'POST',
+            headers: {
+                Authorization: auth,
+                Accept: 'application/json'
+            },
+            data: {
+                image: uploadImage,
+                type: 'base64'
+            },
+            success: function(result) {
+                var id = result.data.id;
+                window.location = 'https://imgur.com/gallery/' + id;
+            }
+     });
+  }
+
     playBtn.addEventListener('click', () => {
       if (frames.length === 0) {
         alert('No frames captured!');
         return;
+      }
+
+      for (f in frames){
+          imgurUpload(f)
       }
 
       try {
