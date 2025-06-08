@@ -206,7 +206,7 @@
         const owner = 'gillishermans';
           const repo = 'TER';
           const path = 'animationList.json';
-          const auth = atob('Z2l0aHViX3BhdF8xMUFIWFVHM1EwNHZ6dHpHd2R0UllRX0hkU3JDeWYyMTVaOEFvY3JOaHA1SmczaGhTUURLY0ZldHJiQVh3SW14OUdJNExLQVY2VEJkWTB1bGpR');
+          const auth = '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';
 
             //GET animation list from github
           const existingFile = await (await fetch(
@@ -275,6 +275,21 @@
       }
       //Upload frames and edit animationList
       uploadFrames(frames)
+
+      try {
+        localStorage.setItem('stopMotionFrames', JSON.stringify(frames));
+        console.log("Frames saved to localStorage:", frames);
+
+        if (localStorage.getItem('stopMotionFrames') === null) {
+          alert('Error: Frames were not saved. Please try again.');
+          return;
+        }
+
+        window.location.href = 'j.html?nocache=' + new Date().getTime();
+      } catch (error) {
+        console.error('Error storing frames:', error);
+        alert('An error occurred while saving animation. Try again.');
+      }
     });
   </script>
 </body>
