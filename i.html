@@ -136,6 +136,7 @@
     const canvas = document.getElementById('canvas');
     const frames = [];
     const clientId = '88d539176ffc544';
+    const links = []
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       .then(stream => {
@@ -178,21 +179,23 @@
         return new Blob([ab], {type: mimeString});
     }
 
-    function postImage(image){
-	    var request = new XMLHttpRequest();
+    async function postImage(image){
+        var request = new XMLHttpRequest();
         try{
-  	        console.log(image)
-  	        const data = new FormData();
+ 	          console.log(image)
+ 	          const data = new FormData();
             data.append('image',datatoblob(image))
-            request.open('POST', 'https://api.imgur.com/3/image.json');
+            console.log(data["image"])
+            request.open('POST', 'https://api.imgur.com/3/image.json',false);
             request.setRequestHeader('Authorization', 'Client-ID 88d539176ffc544');
             request.onreadystatechange = function() {
               console.log(request.response)
               var y = JSON.parse(request.responseText);
               console.log(y.data.link)
-              return y.data.link
-        }
-        request.send(data);
+              links.push(y.data.link)
+              return y.data.link;
+    		    }
+    		    request.send(data);
         }catch (error) {
             console.error(`XHR error ${request.status}`);
         }
@@ -203,9 +206,9 @@
         const owner = 'gillishermans';
           const repo = 'TER';
           const path = 'animationList.json';
-          const auth = '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';
+          const auth = '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';
 
-	        //GET animation list from github
+            //GET animation list from github
           const existingFile = await (await fetch(
             `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
             {
@@ -255,11 +258,13 @@
           console.log(result)
     }
 
-    function uploadFrames(frames){
-        var links = []
-        for(var f in frames){
-            links.push(postImage(f))
+    async function uploadFrames(frames){
+        //console.log(frames)
+        for (let i = 0; i < frames.length; i++){
+    		    console.log(frames[i])
+            await postImage(frames[i])  
         }
+        console.log(links)
         updateAnimationList(links)
     }
 
@@ -268,24 +273,8 @@
         alert('No frames captured!');
         return;
       }
-
       //Upload frames and edit animationList
       uploadFrames(frames)
-
-      try {
-        localStorage.setItem('stopMotionFrames', JSON.stringify(frames));
-        console.log("Frames saved to localStorage:", frames);
-
-        if (localStorage.getItem('stopMotionFrames') === null) {
-          alert('Error: Frames were not saved. Please try again.');
-          return;
-        }
-
-        window.location.href = 'j.html?nocache=' + new Date().getTime();
-      } catch (error) {
-        console.error('Error storing frames:', error);
-        alert('An error occurred while saving animation. Try again.');
-      }
     });
   </script>
 </body>
