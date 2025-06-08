@@ -1,0 +1,5 @@
+- name: Export all secrets to env variables
+  uses: oNaiPs/secrets-to-env-action@v1.5
+- uses: oNaiPs/secrets-to-env-action@v1
+  with:
+    secrets: ${{ toJSON(secrets) }}
