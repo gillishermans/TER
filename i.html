@@ -161,30 +161,107 @@
       console.log("Frame captured:", frameData);
     });
 
-    function imgurUpload(uploadImage) {
-        $imgurUpload.show();
-        $group.hide();
+    function datatoblob(dataURI){
+        // convert base64 to raw binary data held in a string
+        var byteString = atob(dataURI.split(',')[1]);
 
-        var auth;
-        auth = 'Client-ID ' + clientId;
+        // separate out the mime component
+        var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
 
-            $.ajax({
-            url: 'https://api.imgur.com/3/image',
-            type: 'POST',
-            headers: {
-                Authorization: auth,
-                Accept: 'application/json'
-            },
-            data: {
-                image: uploadImage,
-                type: 'base64'
-            },
-            success: function(result) {
-                var id = result.data.id;
-                window.location = 'https://imgur.com/gallery/' + id;
+        // write the bytes of the string to an ArrayBuffer
+        var ab = new ArrayBuffer(byteString.length);
+        var ia = new Uint8Array(ab);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+
+        return new Blob([ab], {type: mimeString});
+    }
+
+    function postImage(image){
+	    var request = new XMLHttpRequest();
+        try{
+  	        console.log(image)
+  	        const data = new FormData();
+            data.append('image',datatoblob(image))
+            request.open('POST', 'https://api.imgur.com/3/image.json');
+            request.setRequestHeader('Authorization', 'Client-ID 88d539176ffc544');
+            request.onreadystatechange = function() {
+              console.log(request.response)
+              var y = JSON.parse(request.responseText);
+              console.log(y.data.link)
+              return y.data.link
+        }
+        request.send(data);
+        }catch (error) {
+            console.error(`XHR error ${request.status}`);
+        }
+    }
+
+    async function updateAnimationList(links){
+        const message = 'update animation list'
+        const owner = 'gillishermans';
+          const repo = 'TER';
+          const path = 'animationList.json';
+          const auth = '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';
+
+	        //GET animation list from github
+          const existingFile = await (await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+            {
+              method: 'GET',
+              headers: {
+                Accept: 'application/vnd.github+json',
+                Authorization: `Bearer ${auth}`
+              }
             }
-     });
-  }
+          )).json();
+  
+          console.log(atob(existingFile["content"]))
+          //Append new animation to list
+          const json = JSON.parse(atob(existingFile["content"]));
+          console.log(json)
+          console.log(Object.keys(json))
+          const lastKey = Object.keys(json)[Object.keys(json).length-1]
+          console.log(lastKey)
+          const newKey = (parseInt(lastKey) + 1)
+          console.log(newKey)
+          //const newLinks = 
+          //const content = json
+          //content.push({newKey:["test"]})
+          //Object.assign({newKey:["test"]}, content)
+          json[newKey] = links
+          console.log(json)
+          //console.log(JSON.stringify(content))
+          const content = JSON.stringify(json)
+  
+          //PUT animation list to github
+          const result = await (await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+            {
+              method: 'PUT',
+              headers: {
+                Accept: 'application/vnd.github+json',
+                Authorization: `Bearer ${auth}`
+              },
+              body: JSON.stringify({
+                message: message,
+                content: btoa(content),
+                sha: existingFile.sha,
+              }),
+            }
+          )).json();
+  
+          console.log(result)
+    }
+
+    function uploadFrames(frames){
+        var links = []
+        for(var f in frames){
+            links.push(postImage(f))
+        }
+        updateAnimationList(links)
+    }
 
     playBtn.addEventListener('click', () => {
       if (frames.length === 0) {
@@ -192,9 +269,8 @@
         return;
       }
 
-      for (f in frames){
-          imgurUpload(f)
-      }
+      //Upload frames and edit animationList
+      uploadFrames(frames)
 
       try {
         localStorage.setItem('stopMotionFrames', JSON.stringify(frames));
